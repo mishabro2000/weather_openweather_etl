@@ -40,7 +40,7 @@ The pipeline is decoupled into three independent classes:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com
+   git clone https://github.com/mishabro2000/weather_openweather_etl
    cd weather-etl-pipeline
    ```
 
@@ -144,7 +144,7 @@ The script supports command-line arguments (CLI) with atomic fallback to default
 
 1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com
+   git clone https://github.com/mishabro2000/weather_openweather_etl
    cd weather-etl-pipeline
    ```
 
