@@ -216,11 +216,9 @@ class LoadWeather:
                     logging.error(f"ошибка данные не внесены в базу данных {e}")
                     raise
                 # просим показать сколько записей было внесено в базу
-                cur.execute("SELECT * FROM weather")
-                rows = cur.fetchall()
-                for row in rows:
-                #logging.info("Выгрузка прошла успешно,общее кол-во записей составляет %s",rows)
-                    logging.info(row)
+                cur.execute("SELECT COUNT(*) FROM weather")
+                rows = cur.fetchone()[0]
+                logging.info("Выгрузка прошла успешно,общее кол-во записей составляет %s",rows)
 
 if __name__ == '__main__':
     # координаты нью-йорка на случай если пользователь ничего не будет изменять и ставить собственные координаты
