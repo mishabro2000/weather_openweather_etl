@@ -48,6 +48,7 @@ Dataclasses	Data class implementation
 JSON	API response processing
 Project Structure
 text
+
 weather-etl-pipeline/
 │
 ├── db_weather_info/          
