@@ -1,164 +1,212 @@
-# 🌦️ Weather ETL Pipeline
+# 🌦️ OpenWeather ETL Pipeline
 
-**A Python-based ETL pipeline for collecting, transforming, and storing current weather data using the OpenWeatherMap API and SQLite.**
-
-> Developed by a 15-year-old Python and Data Engineering enthusiast.
+[![English](https://shields.io)](#english)
+[![Русский](https://shields.io)](#русский)
 
 ---
 
-# 🇬🇧 English
+<a name="english"></a>
+## 🇬🇧 English Version
 
-## 📌 Project Overview
+A reliable and fault-tolerant Python ETL pipeline designed to extract, validate, and store meteorological data from the **OpenWeather API** into a relational **SQLite** database.
 
-Weather ETL Pipeline is an educational project that implements the fundamental principles of ETL (Extract, Transform, Load).
+> **About the Author:** Hi! I'm a 15-year-old aspiring Data Engineer passionate about building clean, production-grade data pipelines, data quality validation, and backend architecture. This project demonstrates OOP principles with a strict separation of concerns across Extract, Transform, and Load stages.
 
-The pipeline retrieves current weather data from the OpenWeatherMap API, validates and transforms the received JSON response, and stores the processed data in an SQLite database.
+### 🛠 Tech Stack
 
-The project demonstrates practical implementation of ETL architecture, working with external REST APIs, data validation, error handling, and database operations.
+* **Python 3.10+** (`dataclasses`, `sqlite3`, `logging`, `datetime`, `sys`)
+* **Requests** — HTTP requests to the REST API
+* **Tenacity** — automatic retries with fixed delays on network failures
+* **Python-dotenv** — secure management of secrets and environment variables
+* **SQLite3** — lightweight relational storage with custom `TIMESTAMP` type adapters
+* **Pytest** — unit testing for pipeline components
 
-## ⚙️ ETL Architecture
+### 🏗 Project Architecture
 
-The project consists of three main stages:
+The pipeline is decoupled into three independent classes:
 
-### 1. Extract — `ExtractWeather`
+1. **`ExtractWeather` (`@dataclass`)**
+   * Validates the presence of `API_KEY` upon initialization (`__post_init__`).
+   * Executes GET requests to the OpenWeather Current Weather API with timeouts and network resilience (`tenacity`).
+2. **`TransformWeather`**
+   * Flattens the nested JSON structure returned by the API.
+   * Converts Unix Timestamps into timezone-aware `datetime` objects (strictly in **UTC**).
+   * Performs **Data Quality** validation on physical metrics (rejecting anomalous temperatures and softly nullifying out-of-bounds pressure, humidity, and cloudiness values).
+3. **`LoadWeather`**
+   * Automatically creates the target directory and database schema in SQLite.
+   * Ensures **idempotency** using a composite unique constraint `UNIQUE(LAT, LON, TIME)` combined with `INSERT OR IGNORE` to prevent duplicate records on repeated runs.
 
-- Retrieves current weather data through the OpenWeatherMap REST API.
-- Uses geographic coordinates to identify the requested location.
-- Loads the API key from environment variables.
-- Implements automatic retries using Tenacity.
-- Validates API key availability and geographic coordinates.
+### 🚀 Installation & Setup
 
-### 2. Transform — `TransformWeather`
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com
+   cd weather-etl-pipeline
+   ```
 
-- Extracts the required fields from the JSON response.
-- Converts values to appropriate Python data types.
-- Validates temperature, atmospheric pressure, humidity, and cloudiness.
-- Converts Unix timestamps into UTC datetime objects.
-- Handles missing and invalid values.
+2. **Create and activate a virtual environment:**
+   ```bash
+   python -m venv venv
+   # For Windows:
+   venv\Scripts\activate
+   # For Linux/macOS:
+   source venv/bin/activate
+   ```
 
-### 3. Load — `LoadWeather`
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- Creates an SQLite database table if it does not exist.
-- Inserts processed weather records.
-- Prevents duplicate records using a UNIQUE constraint on latitude, longitude, and observation time.
-- Logs the number of stored records.
+4. **Configure environment variables:**
+   Create a `.env` file in the project root and add your OpenWeather API key:
+   ```env
+   API_KEY=your_secret_openweather_api_key
+   ```
 
-## 🛠️ Technologies Used
+### 💻 Usage Examples
 
-| Technology | Purpose |
-|:---|:---|
-| Python | Main programming language |
-| SQLite3 | Relational database and data storage |
-| Requests | HTTP requests to the REST API |
-| Tenacity | Automatic request retries |
-| Python-dotenv | Environment variable management |
-| Logging | Execution and error logging |
-| Dataclasses | Data class implementation |
-| JSON | API response processing |
+The script supports command-line arguments (CLI) with atomic fallback to default settings if invalid input is provided:
 
-## 📁 Project Structure
+* **Run with default settings** (New York: `40.7128, -74.0060`, language: `ru`):
+  ```bash
+  python ETL_WEATHER_PIPELINE.py
+  ```
 
-```text
-weather-etl-pipeline/
-│
-├── db_weather_info/
-│   └── SQLite database (generated locally)
-│
-├── ETL_WEATHER_PIPELINE.py   # Main ETL pipeline
-│
-├── .env                      # API credentials (not committed)
-├── .gitignore                # Files excluded from Git
-├── requirements.txt          # Project dependencies
-└── README.md                 # Project documentation
+* **Run for specific coordinates** (e.g., Moscow, default language `ru`):
+  ```bash
+  python ETL_WEATHER_PIPELINE.py 55.7558 37.6173
+  ```
 
-## 🗄️ Database
+* **Run with custom coordinates and weather description language** (e.g., London, `en`):
+  ```bash
+  python ETL_WEATHER_PIPELINE.py 51.5074 -0.1278 en
+  ```
 
-Processed weather data is stored in an SQLite database.
+### 🗄 SQLite Table Schema (`weather`)
 
-The `weather` table contains the following fields:
+| Column | Data Type | Description |
+| :--- | :--- | :--- |
+| `ID` | `INTEGER` | Primary key (`PRIMARY KEY AUTOINCREMENT`) |
+| `LAT` | `REAL` | Location latitude (part of the unique key) |
+| `LON` | `REAL` | Location longitude (part of the unique key) |
+| `DESCRIPTION` | `TEXT` | Text description of weather conditions |
+| `TEMP` | `REAL` | Air temperature (°C) |
+| `FEELS_LIKE` | `REAL` | Perceived temperature (°C) |
+| `PRESSURE` | `REAL` | Atmospheric pressure (hPa) |
+| `HUMIDITY` | `REAL` | Relative air humidity (%) |
+| `CLOUDS` | `REAL` | Cloudiness (%) |
+| `TIME` | `TIMESTAMP` | Measurement timestamp in ISO 8601 format (UTC) |
+| `COUNTRY` | `TEXT` | Two-letter country code (ISO 3166) |
 
-| Column | Description |
-|:---|:---|
-| ID | Unique record identifier |
-| LAT | Latitude |
-| LON | Longitude |
-| DESCRIPTION | Weather description |
-| TEMP | Temperature (°C) |
-| FEELS_LIKE | Feels-like temperature (°C) |
-| PRESSURE | Atmospheric pressure (hPa) |
-| HUMIDITY | Relative humidity (%) |
-| CLOUDS | Cloudiness (%) |
-| TIME | Observation timestamp (UTC) |
-| COUNTRY | Country code |
+### 📊 Logging & Testing
 
-## 🌐 Data Source
+* All pipeline execution stages, Data Quality warnings, and errors are logged to `history_weather_ETL.log`.
+* To run unit tests, execute:
+  ```bash
+  pytest
+  ```
 
-Weather data is provided by the [OpenWeatherMap API](https://openweathermap.org/api).
+---
 
+<a name="русский"></a>
+## 🇷🇺 Русская версия
 
-# 🇷🇺 Русская версия
+Надёжный и отказоустойчивый ETL-пайплайн на Python для сбора, валидации и сохранения метеорологических данных из **OpenWeather API** в реляционную базу данных **SQLite**.
 
-## 📌 Описание проекта
+> **Об авторе:** Привет! Мне 15 лет, я начинающий Data Engineer и увлекаюсь построением чистых, отказоустойчивых конвейеров данных, валидацией качества данных (Data Quality) и проектированием архитектуры. Этот проект построен на принципах ООП с чётким разделением ответственности между этапами извлечения, трансформации и загрузки данных.
 
-Weather ETL Pipeline — учебный проект, реализующий основные принципы ETL (Extract, Transform, Load).
+### 🛠 Технологический стек
 
-Пайплайн получает текущие погодные данные через OpenWeatherMap API, проверяет и преобразует полученный JSON-ответ, после чего сохраняет обработанные данные в базу данных SQLite.
+* **Python 3.10+** (`dataclasses`, `sqlite3`, `logging`, `datetime`, `sys`)
+* **Requests** — HTTP-запросы к REST API
+* **Tenacity** — автоматические повторные попытки (retries) при сетевых сбоях
+* **Python-dotenv** — безопасное управление секретами и переменными окружения
+* **SQLite3** — хранение данных с кастомными адаптерами типов `TIMESTAMP`
+* **Pytest** — модульное тестирование компонентов пайплайна
 
-Проект демонстрирует практическое применение ETL-архитектуры, работу с внешними REST API, проверку качества данных, обработку ошибок и взаимодействие с базами данных.
+### 🏗 Архитектура проекта
 
-> Проект разработан 15-летним энтузиастом Python и Data Engineering.
+Пайплайн разделён на три независимых класса:
 
-## ⚙️ Архитектура ETL
+1. **`ExtractWeather` (`@dataclass`)**
+   * Валидирует наличие `API_KEY` при инициализации (`__post_init__`).
+   * Выполняет GET-запросы к OpenWeather Current Weather API с таймаутом и защитой от временных сбоев сети (`tenacity`).
+2. **`TransformWeather`**
+   * «Выпрямляет» вложенную JSON-структуру ответа API.
+   * Конвертирует Unix Timestamp в объекты `datetime` (строго в часовом поясе **UTC**).
+   * Проводит **Data Quality** валидацию физических показателей (отбраковка аномальных температур, мягкая очистка некорректных значений давления, влажности и облачности).
+3. **`LoadWeather`**
+   * Автоматически создаёт директорию и схему таблицы в SQLite.
+   * Обеспечивает **идемпотентность** загрузки за счёт составного уникального ключа `UNIQUE(LAT, LON, TIME)` и конструкции `INSERT OR IGNORE` (защита от дублей при повторных запусках).
 
-Проект состоит из трёх основных этапов:
+### 🚀 Установка и настройка
 
-### 1. Extract — `ExtractWeather` (извлечение)
+1. **Клонируйте репозиторий:**
+   ```bash
+   git clone https://github.com
+   cd weather-etl-pipeline
+   ```
 
-- Получение текущих погодных данных через OpenWeatherMap REST API.
-- Использование географических координат для определения местоположения.
-- Получение API-ключа из переменных окружения.
-- Автоматические повторные запросы при возникновении ошибок с использованием Tenacity.
-- Проверка наличия API-ключа и корректности географических координат.
+2. **Создайте и активируйте виртуальное окружение:**
+   ```bash
+   python -m venv venv
+   # Для Windows:
+   venv\Scripts\activate
+   # Для Linux/macOS:
+   source venv/bin/activate
+   ```
 
-### 2. Transform — `TransformWeather` (преобразование)
+3. **Установите зависимости:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- Извлечение необходимых полей из JSON-ответа.
-- Преобразование значений в соответствующие типы данных Python.
-- Проверка температуры, атмосферного давления, влажности и облачности.
-- Преобразование Unix timestamp в объекты datetime с часовым поясом UTC.
-- Обработка отсутствующих и некорректных значений.
+4. **Настройте переменные окружения:**
+   Создайте файл `.env` в корне проекта и добавьте ваш API-ключ от OpenWeather:
+   ```env
+   API_KEY=ваш_секретный_ключ_openweather
+   ```
 
-### 3. Load — `LoadWeather` (загрузка)
+### 💻 Примеры запуска
 
-- Создание таблицы SQLite, если она ещё не существует.
-- Загрузка обработанных погодных данных.
-- Предотвращение дублирования записей с помощью ограничения UNIQUE по широте, долготе и времени наблюдения.
-- Логирование количества сохранённых записей.
+Скрипт поддерживает передачу параметров через командную строку (CLI) с атомарным откатом к настройкам по умолчанию при некорректном вводе:
 
-## 🛠️ Используемые технологии
+* **Запуск со значениями по умолчанию** (Нью-Йорк: `40.7128, -74.0060`, язык: `ru`):
+  ```bash
+  python ETL_WEATHER_PIPELINE.py
+  ```
 
-| Технология | Назначение |
-|:---|:---|
-| Python | Основной язык программирования |
-| SQLite3 | Реляционная база данных и хранение информации |
-| Requests | HTTP-запросы к REST API |
-| Tenacity | Автоматические повторные запросы |
-| Python-dotenv | Работа с переменными окружения |
-| Logging | Логирование работы и ошибок |
-| Dataclasses | Работа с классами данных |
-| JSON | Обработка ответов API |
+* **Запуск для конкретных координат** (например, Москва, язык по умолчанию `ru`):
+  ```bash
+  python ETL_WEATHER_PIPELINE.py 55.7558 37.6173
+  ```
 
-## 📁 Структура проекта
+* **Запуск с указанием координат и языка описания погоды** (например, Лондон, `en`):
+  ```bash
+  python ETL_WEATHER_PIPELINE.py 51.5074 -0.1278 en
+  ```
 
-```text
-weather-etl-pipeline/
-│
-├── db_weather_info/
-│   └── База данных SQLite (создаётся локально)
-│
-├── ETL_WEATHER_PIPELINE.py   # Основной ETL-пайплайн
-│
-├── .env                      # API-ключ (не загружается в Git)
-├── .gitignore                # Исключаемые из Git файлы
-├── requirements.txt          # Зависимости проекта
-└── README.md                 # Документация проекта
+### 🗄 Структура таблицы в SQLite (`weather`)
+
+| Колонка | Тип данных | Описание |
+| :--- | :--- | :--- |
+| `ID` | `INTEGER` | Первичный ключ (`PRIMARY KEY AUTOINCREMENT`) |
+| `LAT` | `REAL` | Широта локации (часть уникального ключа) |
+| `LON` | `REAL` | Долгота локации (часть уникального ключа) |
+| `DESCRIPTION` | `TEXT` | Текстовое описание погодных условий |
+| `TEMP` | `REAL` | Температура воздуха (°C) |
+| `FEELS_LIKE` | `REAL` | Ощущаемая температура (°C) |
+| `PRESSURE` | `REAL` | Атмосферное давление (гПа) |
+| `HUMIDITY` | `REAL` | Относительная влажность воздуха (%) |
+| `CLOUDS` | `REAL` | Облачность (%) |
+| `TIME` | `TIMESTAMP` | Время замера в формате ISO 8601 (UTC) |
+| `COUNTRY` | `TEXT` | Двухбуквенный код страны (ISO 3166) |
+
+### 📊 Логирование и тесты
+
+* Все этапы работы конвейера, предупреждения Data Quality и ошибки записываются в файл `history_weather_ETL.log`.
+* Для запуска модульных тестов выполните:
+  ```bash
+  pytest
+  ```
