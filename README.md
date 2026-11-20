@@ -41,7 +41,7 @@ The pipeline is decoupled into three independent classes:
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/mishabro2000/weather_openweather_etl
-   cd weather-etl-pipeline
+   cd weather_openweather_etl
    ```
 
 2. **Create and activate a virtual environment:**
@@ -99,13 +99,6 @@ The script supports command-line arguments (CLI) with atomic fallback to default
 | `TIME` | `TIMESTAMP` | Measurement timestamp in ISO 8601 format (UTC) |
 | `COUNTRY` | `TEXT` | Two-letter country code (ISO 3166) |
 
-### 📊 Logging & Testing
-
-* All pipeline execution stages, Data Quality warnings, and errors are logged to `history_weather_ETL.log`.
-* To run unit tests, execute:
-  ```bash
-  pytest
-  ```
 
 ---
 
@@ -145,7 +138,7 @@ The script supports command-line arguments (CLI) with atomic fallback to default
 1. **Клонируйте репозиторий:**
    ```bash
    git clone https://github.com/mishabro2000/weather_openweather_etl
-   cd weather-etl-pipeline
+   cd weather_openweather_etl
    ```
 
 2. **Создайте и активируйте виртуальное окружение:**
@@ -203,10 +196,4 @@ The script supports command-line arguments (CLI) with atomic fallback to default
 | `TIME` | `TIMESTAMP` | Время замера в формате ISO 8601 (UTC) |
 | `COUNTRY` | `TEXT` | Двухбуквенный код страны (ISO 3166) |
 
-### 📊 Логирование и тесты
 
-* Все этапы работы конвейера, предупреждения Data Quality и ошибки записываются в файл `history_weather_ETL.log`.
-* Для запуска модульных тестов выполните:
-  ```bash
-  pytest
-  ```
