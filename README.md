@@ -95,7 +95,6 @@ The `weather` table contains the following fields:
 
 Weather data is provided by the [OpenWeatherMap API](https://openweathermap.org/api).
 
----
 
 # 🇷🇺 Русская версия
 
